@@ -1,7 +1,7 @@
 ######
 library(tidyverse)
 library(forcats)
-detach(package:elastic, unload = TRUE)
+#detach(package:elastic, unload = TRUE)
 
 data <- read_csv("data/social_capital_data_2015-2019.csv")
 
@@ -85,7 +85,7 @@ council_sentiment <- data_sydney %>%
   summarise(count=n()) %>%
   drop_na() %>%
   #calculate percentage of counts
-  mutate(freq = count / sum(count)*100)
+  mutate(freq = count / sum(dplyr::count)*100)
 
 #create pie chart
 filename <-"Sentiment per district"

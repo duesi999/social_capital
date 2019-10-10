@@ -6,8 +6,8 @@ conn <- elastic::connect(host="130.155.204.198", errors = "complete")
 #ping(conn)$version$number
 
 #select dates for each year
-start <- '2018-01-01'
-end <- '2018-12-31'
+start <- '2019-01-01'
+end <- '2019-12-31'
 
 #set filtering parameters; filter for start and end dates, get twitter feeds, and exclude Media and Transport search categories
 eval(parse(text = paste0('twitter <- \'{ "query":{

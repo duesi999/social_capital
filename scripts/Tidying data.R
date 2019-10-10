@@ -1,14 +1,14 @@
 
 ######
 #read in and join yearly datasets
-d1 <- read_csv("data/social_capital_data_2012-01-01_2012-12-31.csv.csv")
-d2 <- read_csv("data/social_capital_data_2013-01-01_2013-12-31.csv.csv")
-d3 <- read_csv("data/social_capital_data_2014-01-01_2014-12-31.csv.csv")
-d4 <- read_csv("data/social_capital_data_2015-01-01_2015-12-31.csv.csv")
-d5 <- read_csv("data/social_capital_data_2016-01-01_2016-12-31.csv.csv")
-d6 <- read_csv("data/social_capital_data_2017-01-01_2017-12-31.csv.csv")
-d7 <- read_csv("data/social_capital_data_2018-01-01_2018-12-31.csv.csv")
-d8 <- read_csv("data/social_capital_data_2019-01-01_2019-12-31.csv.csv")
+d1 <- read_csv("data/social_capital_data_2012-01-01_2012-12-31.csv")
+d2 <- read_csv("data/social_capital_data_2013-01-01_2013-12-31.csv")
+d3 <- read_csv("data/social_capital_data_2014-01-01_2014-12-31.csv")
+d4 <- read_csv("data/social_capital_data_2015-01-01_2015-12-31.csv")
+d5 <- read_csv("data/social_capital_data_2016-01-01_2016-12-31.csv")
+d6 <- read_csv("data/social_capital_data_2017-01-01_2017-12-31.csv")
+d7 <- read_csv("data/social_capital_data_2018-01-01_2018-12-31.csv")
+d8 <- read_csv("data/social_capital_data_2019-01-01_2019-12-31.csv")
 
 data <- do.call("rbind", list(d1,d2,d3,d4,d5,d6,d7,d8))
 write_csv(data, paste0("data/social_capital_data_2015-2019.csv"))
