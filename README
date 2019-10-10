@@ -1,0 +1,26 @@
+The dataset is a collection of twitter posts from or about Sydney councils.
+We use two tools (Vizie and ESA) developed by the Data61 LASC team to collect the social media data.
+
+The original data is stored in elasticsearch. To make it available in R it has to be read into R from elasticsearch; the elasic package facilitates doind this.
+As the dataset if faily large (approx 300-400k posts), the data is read in yearly chunks. The data then has to be pre-processed; elasticsearch stores some fields in lists with multiple entries (e.g. there can be more than one hashtag per post) - the search string has to be unlisted and put into a data frame (this is done with a set of for loops; this process takes a very long time).
+The yearly dataframes are then stored as separage csv files and once csv fiels for all years have been produced these are joined into a final data set (which is again stored as csv). This final dataset (currently approx 65mb) is not stored in GIT hub.
+
+The original dataset “grows” continuously with new twitter posts coming in (for the excersise I can use the saved csv file); so the 2019 data will have to be updated occasionaly.
+
+The csv file has ~300k (one row for each post) and 14 variables:
+  authorid – unique number for twitter post author
+activities – grouping variable – grouping of post search terms – all 3-levels
+topactivities - grouping variable – – grouping of post search terms – second level
+categoryruletext –  grouping variable – – grouping of post search terms – first level
+keyterms – keywords extracted form posts
+sentiment – classifier - sentiment of post-test (positive , negative , neutral)
+emotions – classifier – emotion of post-text (joy, love, surprise, anger, sadness, fear, other)
+hashtags - hashtags
+link – URL link to tweet
+publisheddate – date when post was published
+gender  - classified gender of author
+medias  - type of medium (this is same for all as we only consider twitter posts here – microblog)
+indvorg – classifier – is the author an individual or organisation
+
+Note: the data is used in a current Data61 project; we have ethics clearance for using the data for the project purposes; we are only allowed to report aggregated data and have to make sure that we don’t make info public that in some way could help identify individuals.
+
