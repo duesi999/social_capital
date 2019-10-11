@@ -6,8 +6,8 @@ conn <- elastic::connect(host="130.155.204.198", errors = "complete")
 #ping(conn)$version$number
 
 #select dates for each year
-start <- '2019-01-01'
-end <- '2019-12-31'
+start <- '2014-12-01'
+end <- '2014-12-31'
 
 #set filtering parameters; filter for start and end dates, get twitter feeds, and exclude Media and Transport search categories
 eval(parse(text = paste0('twitter <- \'{ "query":{
@@ -24,7 +24,8 @@ eval(parse(text = paste0('twitter <- \'{ "query":{
 }}\'')))
 
 #define which fields to get
-output <- Search(conn, index = "social_capital",body = twitter,size = 500000, source = "authorid,activities,categoryruletext,keyterms,sentiment,emotions,hashtags,link,publisheddate,topactivities,gender,indvorg")$hits$hits
+#define which fields to get
+output <- Search(conn, index = "social_capital",body = twitter,size = 500000, source = "authorid,activities,categoryruletext,keyterms,sentiment,emotions,hashtags,link,publisheddate,topactivities,gender,indvorg,text")$hits$hits
 
 #create dataframe
 df <- data.frame()
@@ -89,10 +90,17 @@ for(o in output){
     indvorg <- unlist(thingsIwant$indvorg)
     indvorg <- paste(indvorg, collapse = ", ")
   }
-  
-  df_line <- data.frame(authorid,activities,categoryruletext,keyterms,sentiment,emotions,hashtags,link,publisheddate,topactivities,gender,indvorg)
+  if(is.null(thingsIwant$text)){
+    text <- NA
+  }else{
+    text <- unlist(thingsIwant$text)
+    text <- paste(text, collapse = ", ")
+}
+    
+  df_line <- data.frame(authorid,activities,categoryruletext,keyterms,sentiment,emotions,hashtags,link,publisheddate,topactivities,gender,indvorg,text)
   df <- rbind(df,df_line)
 }
+
 
 #convert publisheddate to date format
 df <- df %>%

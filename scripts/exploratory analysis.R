@@ -9,7 +9,7 @@ glimpse(data)
 
 
 # sentiment proportion in each council
-council_sentiment <- data_sydney %>%
+council_sentiment <- df_sydney %>%
   group_by(council, sentiment) %>%
   summarise(count=n()) %>%
   drop_na() %>%
@@ -32,7 +32,7 @@ ggplot(council_sentiment, aes(x="", y=freq, fill=sentiment)) +
 ggsave(filename = paste0("results/", filename, ".pdf"), height = 12, width = 12, unit = "cm")
 
 # sentiment proportion in each district
-council_sentiment <- data_sydney %>%
+council_sentiment <- df_sydney %>%
   group_by(district, sentiment) %>%
   summarise(count=n()) %>%
   drop_na() %>%
@@ -57,7 +57,7 @@ ggsave(filename = paste0("results/", filename, ".pdf"), height = 12, width = 12,
 
 
 # emotion proportion in each council
-council_emotions <- data_sydney %>%
+council_emotions <- df_sydney %>%
   group_by(council, emotions) %>%
   summarise(count=n()) %>%
   drop_na() %>%
@@ -80,7 +80,7 @@ ggplot(council_emotions, aes(x="", y=freq, fill=emotions)) +
 ggsave(filename = paste0("results/", filename, ".pdf"), height = 12, width = 12, unit = "cm")
 
 # sentiment proportion in each district
-council_sentiment <- data_sydney %>%
+council_sentiment <- df_sydney %>%
   group_by(district, sentiment) %>%
   summarise(count=n()) %>%
   drop_na() %>%
@@ -103,9 +103,16 @@ ggplot(council_sentiment, aes(x="", y=freq, fill=sentiment)) +
 ggsave(filename = paste0("results/", filename, ".pdf"), height = 12, width = 12, unit = "cm")
 
 
+#number of posts per council
+no_council_posts <- df_sydney %>%
+#  filter(indvorg == "individual") %>%
+  group_by(council) %>%
+  summarise(post_count = n()) %>%
+  arrange(council)
+
 #uniuqe authors in councils
-authors_1 <- data_sydney %>%
-  filter(indvorg == "individual") %>%
+authors_1 <- df_sydney %>%
+#  filter(indvorg == "individual") %>%
   group_by(authorid, council) %>%
   summarise(count = n()) %>%
   arrange(council, desc(count))
@@ -113,5 +120,22 @@ authors_1 <- data_sydney %>%
 #number of unique voices
 authors_2 <- authors_1 %>%
   group_by(council) %>%
-  summarise(unique_authors = n())
+  summarise(unique_authors = n()) %>%
+  left_join(no_council_posts, by = "council") %>%
+  mutate(percent_unique_authors = round(unique_authors/post_count*100)) %>%
+#  arrange(desc(post_count))%>%
+  drop_na()
+
+#plot
+filename <- "Number of posts and unique authors per council"
+ggplot(authors_2, aes(x= reorder(council, post_count))) +
+  geom_bar(aes(y = post_count), stat = "identity", fill = "#b3cde3") +
+  geom_bar(aes(y = unique_authors), stat = "identity", fill = "red", alpha = 0.7) +
+  geom_text(aes(y = unique_authors, label = paste0(percent_unique_authors, "%")), position = position_nudge(y = 5000), colour = "black") +
+  ggtitle(filename) +
+  coord_flip() +
+  ylab("Number of posts (blue), number of unique authors (red) and percent of unique authors") +
+  xlab("Councils")
+ggsave(filename = paste0("results/", filename, ".pdf"))
+
 
