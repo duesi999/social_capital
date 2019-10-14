@@ -22,7 +22,7 @@ df <- read_csv("data/social_capital_data_2015-2019.csv")
 #remove medias column - all are values are the same: microblog
 #filter for Sydney data
 df_sydney <- df %>%
-  select(-keywords) %>%
+  select(-keywords, -medias) %>%
   filter(topactivities == "SYDNEY") %>%
   mutate(
     authorid = factor(authorid),
@@ -37,43 +37,77 @@ df_sydney <- df %>%
   #get rid of multiple entries in categoryruletext field
   separate(categoryruletext, c("council", "council2", "council3"), sep = ", ") %>%
   select(-council2, -council3) %>%
-  #add district colum - https://www.planning.nsw.gov.au/Plans-for-your-area/A-Metropolis-of-Three-Cities/Greater-Sydney-Districts/Five-districts
-  mutate(district = case_when(council == "BLUE MOUNTAINS"  ~ "Western",
-                              council == "HAWKESBURY"   ~ "Western",
-                              council == "PENRITH"   ~ "Western",
-                              council == "CAMDEN"   ~ "Western",
-                              council == "CAMPBELLTOWN"   ~ "Western",
-                              council == "FAIRFIELD"   ~ "Western",
-                              council == "LIVERPOOL"   ~ "Western",
-                              council == "WOLLONDILLY"   ~ "Western",
-                              council == "BLACKTOWN"   ~ "Central",
-                              council == "CUMBERLAND"   ~ "Central",
-                              council == "PARRAMATTA"  ~ "Central",
-                              council == "HILLS"   ~ "Central",
-                              council == "BAYSIDE"   ~ "Eastern",
-                              council == "BURWOOD"   ~ "Eastern",
-                              council == "CANADA BAY"  ~ "Eastern",
-                              council == "INNER WEST"  ~ "Eastern",
-                              council == "RANDWICK" ~ "Eastern",
-                              council == "STRATHFIELD"  ~ "Eastern",
-                              council == "WOOLLAHRA" ~ "Eastern",
-                              council == "WAVERLEY"  ~ "Eastern",
-                              council ==  "CITY"  ~ "Eastern",
-                              council ==  "HORNSBY"  ~ "North",
-                              council ==  "HUNTER'S HILL"  ~ "North",
-                              council ==   "LANE COVE"  ~ "North",
-                              council ==   "NORTHERN BEACHES" ~ "North",
-                              council ==   "KU-RING-GAI" ~ "North",
-                              council ==   "MOSMAN" ~ "North",
-                              council ==   "WILLOUGHBY" ~ "North",
-                              council ==   "RYDE" ~ "North",
-                              council ==   "WILLOUGHBY" ~ "North",
-                              council ==   "NORTH" ~ "North",
-                              council ==   "GEORGES RIVER" ~ "South",
-                              council ==   "CANTERBURY-BANKSTOWN" ~ "South",
-                              council ==   "SUTHERLAND" ~ "South"))
+  #same for emotions (will produce error messages - ignore)
+  separate(emotions, c("emotions", "emotion2"), sep = ", ") %>%
+  select(-emotion2)
+  
+
+###
+#tidy council names - convert all to lower case fist, then make first letter capital
+df_sydney$council <- tolower(df_sydney$council)
+simpleCap <- function(x) {
+  s <- strsplit(x, " ")[[1]]
+  paste(toupper(substring(s, 1,1)), substring(s, 2),
+        sep="", collapse=" ")
+}
+df_sydney$council <- sapply(df_sydney$council, simpleCap)
+
+#rename those council names that don't match ABS names
+df_sydney <- df_sydney %>%
+  mutate(council = case_when(council == "Canterbury-bankstown" ~"Canterbury-Bankstown",
+                             council == "City" ~ "Sydney",
+                             council == "Sutherland" ~ "Sutherland Shire",
+                             council == "Hills" ~ "The Hills Shire",
+                             council == "North" ~ "North Sydney",
+                             council == "Hunter's Hill" ~ "Hunters Hill",
+                             council == "Waverly" ~ "Waverley",
+                             #include a final catch-all test and replacement to get rest of data
+                             TRUE ~ council)) %>%
+  filter(council != "NANA")
+  
+#add district colum - https://www.planning.nsw.gov.au/Plans-for-your-area/A-Metropolis-of-Three-Cities/Greater-Sydney-Districts/Five-districts
+df_sydney <- df_sydney %>%
+  mutate(district = case_when(council == "Blue Mountains"  ~ "Western",
+                              council == "Hawkesbury"   ~ "Western",
+                              council == "Penrith"   ~ "Western",
+                              council == "Camden"   ~ "Western",
+                              council == "Campbelltown"   ~ "Western",
+                              council == "Fairfield"   ~ "Western",
+                              council == "Liverpool"   ~ "Western",
+                              council == "Wollondilly"   ~ "Western",
+                              council == "Blacktown"   ~ "Central",
+                              council == "Cumberland"   ~ "Central",
+                              council == "Parramatta"  ~ "Central",
+                              council == "The Hills Shire" ~ "Central",
+                              council == "Bayside"   ~ "Eastern",
+                              council == "Burwood"   ~ "Eastern",
+                              council == "Canada Bay"  ~ "Eastern",
+                              council == "Inner West"  ~ "Eastern",
+                              council == "Randwick" ~ "Eastern",
+                              council == "Strathfield"  ~ "Eastern",
+                              council == "Woollahra" ~ "Eastern",
+                              council == "Waverley"  ~ "Eastern",
+                              council ==  "Sydney"  ~ "Eastern",
+                              council ==  "Hornsby"  ~ "North",
+                              council ==  "Hunters Hill"  ~ "North",
+                              council ==   "Lane Cove"  ~ "North",
+                              council ==   "Northern Beaches" ~ "North",
+                              council ==   "Ku-ring-gai" ~ "North",
+                              council ==   "Mosman" ~ "North",
+                              council ==   "Willoughby" ~ "North",
+                              council ==   "Ryde" ~ "North",
+                              council ==   "North Sydney" ~ "North",
+                              council ==   "Georges River" ~ "South",
+                              council ==   "Canterbury-Bankstown" ~ "South",
+                              council ==   "Sutherland Shire" ~ "South"))
 
 
+####
+#read in Sydney population statistics
+pop_sydney <- read_csv("data/ABS/population_sydney_councils.csv")
+
+#remove bracketed string content
+pop_sydney$council <- gsub(".\\(.*?\\)", "", pop_sydney$LGA)
 
 
 
