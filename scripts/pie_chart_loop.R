@@ -1,5 +1,5 @@
 library(plotly)
-library(cowplot)
+library(processx)
 
 # create graphing function
 council.graph <- function(df, na.rm = TRUE, ...){
@@ -19,6 +19,7 @@ council.graph <- function(df, na.rm = TRUE, ...){
     
     print(plot)
     #  paste0("plot_",council_list[i]) <- plot
+    # assign(paste0("plotly_",council_list[i]), plot, envir = .GlobalEnv)
   }
 }
 
@@ -27,5 +28,22 @@ council.graph(council_sentiment)
              
              
              
-  
-  
+# #Stephen's suggestion for the function and loop
+# plot_one_council <- function(df) {
+#   #code to plot a single council's data
+# }
+# 
+# council_plots <- council_sentiment %>%
+#   split(.$council) %>% #is now a list of separate data frames per council
+#   map(plot_one_council) #runs the plot_one_council function on each data frame in the list
+# 
+# #council_plots is now a list containing a plot for each council separately
+
+
+
+p<- plot_ly(council_sentiment, labels = ~sentiment, values = ~freq, type = 'pie') %>%
+  layout(xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+         yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+p
+
+orca(p, "test-plot.png")
