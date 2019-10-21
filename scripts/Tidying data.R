@@ -15,6 +15,9 @@ library(tidyverse)
 # write_csv(df, paste0("data/social_capital_data_2015-2019.csv"))
 
 df <- read_csv("data/social_capital_data_2015-2019.csv")
+df_authorid <- read_csv("data/social_capital_data_authorid_2015-2019.csv") %>%
+  mutate(authorid = factor(authorid),
+         author = factor(author))
 
 #######
 #data cleaning
@@ -34,12 +37,14 @@ df_sydney <- df %>%
     gender = factor(gender),
     indvorg = factor(indvorg)
   ) %>%
-  #get rid of multiple entries in categoryruletext field
-  separate(categoryruletext, c("council", "council2", "council3"), sep = ", ") %>%
-  select(-council2, -council3) %>%
-  #same for emotions (will produce error messages - ignore)
-  separate(emotions, c("emotions", "emotion2"), sep = ", ") %>%
-  select(-emotion2)
+  ###get rid of multiple entries in categoryruletext field - this only keeps the first council mentioned and discards the rest if more are mentioned in a post
+  ## separate(categoryruletext, c("council", "council2", "council3"), sep = ", ") %>%
+  ## select(-council2, -council3) %>%
+  #instead separate into new rows if more than one council is mentioned - this "increases the number of observations"
+  separate_rows(categoryruletext,sep=",\\s+") %>%
+  rename(council = categoryruletext) %>%
+  left_join(df_authors, by = "authorid")
+
   
 
 ###

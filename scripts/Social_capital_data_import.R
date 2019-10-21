@@ -102,7 +102,35 @@ df <- df %>%
 #write to csv
 write_csv(df, paste0("data/social_capital_data_",start,"_",end,".csv"))
 
-str(df)
-min(df$publisheddate)  
-max(df$publisheddate)  
+
+########
+#add author field
+#set filtering parameters; filter for start and end dates, get twitter feeds, and exclude Media and Transport search categories
+eval(parse(text = paste0('twitter <- \'{ "query":{
+"bool": {
+  "must":[
+    {"term":{"platform":"twitter"}},
+    {"range": {"publisheddate": {"gte": "', start, '", "lt": "', end, '"}}}
+  ],
+  "must_not":[
+    {"match_phrase":{"categoryruletext":"MEDIA"}},
+    {"match_phrase":{"categoryruletext":"TRANSPORT"}}
+  ]
+}
+}}\'')))
+
+#define which fields to get
+output_authors <- Search(conn, index = "social_capital",body = twitter,size = 500000, source = "authorid,author")$hits$hits
+
+
+df_authors <- setDF(data.table::rbindlist(
+  lapply(output_authors, "[[", "_source"),
+  fill = TRUE, use.names = TRUE
+))
+df_authors$authorid <- as.factor(df_authors$authorid)
+df_authors$author <- as.factor(df_authors$author)
+df_authors <- distinct(df_authors)
+
+#write to csv
+write_csv(df_authors, paste0("data/social_capital_data_authors_",start,"_",end,".csv"))
 
