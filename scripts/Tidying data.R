@@ -15,7 +15,7 @@ library(tidyverse)
 # write_csv(df, paste0("data/social_capital_data_2015-2019.csv"))
 
 df <- read_csv("data/social_capital_data_2015-2019.csv")
-df_authorid <- read_csv("data/social_capital_data_authorid_2015-2019.csv") %>%
+df_authors <- read_csv("data/social_capital_data_authors.csv") %>%
   mutate(authorid = factor(authorid),
          author = factor(author))
 
@@ -26,7 +26,9 @@ df_authorid <- read_csv("data/social_capital_data_authorid_2015-2019.csv") %>%
 #filter for Sydney data
 df_sydney <- df %>%
   select(-keywords, -medias) %>%
-  filter(topactivities == "SYDNEY") %>%
+  #filter posst frpm Sydney and only from councils
+  filter(topactivities == "SYDNEY",
+         grepl("COUNCIL", activities)) %>%
   mutate(
     authorid = factor(authorid),
     activities = factor(activities),
@@ -37,13 +39,16 @@ df_sydney <- df %>%
     gender = factor(gender),
     indvorg = factor(indvorg)
   ) %>%
+  #join with author data
+  left_join(df_authors, by = "authorid") %>%
+  mutate(authorid = factor(authorid)) %>%
   ###get rid of multiple entries in categoryruletext field - this only keeps the first council mentioned and discards the rest if more are mentioned in a post
   ## separate(categoryruletext, c("council", "council2", "council3"), sep = ", ") %>%
   ## select(-council2, -council3) %>%
   #instead separate into new rows if more than one council is mentioned - this "increases the number of observations"
   separate_rows(categoryruletext,sep=",\\s+") %>%
-  rename(council = categoryruletext) %>%
-  left_join(df_authors, by = "authorid")
+  rename(council = categoryruletext)
+
 
   
 

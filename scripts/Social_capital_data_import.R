@@ -1,5 +1,6 @@
 library(tidyverse)
 library(elastic)
+library(data.table)
 
 #stablish connection with elastic search
 conn <- elastic::connect(host="130.155.204.198", errors = "complete")
@@ -132,5 +133,5 @@ df_authors$author <- as.factor(df_authors$author)
 df_authors <- distinct(df_authors)
 
 #write to csv
-write_csv(df_authors, paste0("data/social_capital_data_authors_",start,"_",end,".csv"))
+write_csv(df_authors, paste0("data/social_capital_data_authors.csv"))
 

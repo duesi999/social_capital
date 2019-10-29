@@ -3,13 +3,14 @@ library(tidyverse)
 library(forcats)
 library(ggrepel)
 library(cowplot)
+library(lubridate)
+library(zoo)
+
+
 ##in case it's loaded, detach the elastic package because it masks sone dplyr functions
 #detach(package:elastic, unload = TRUE)
 
 data <- read_csv("data/social_capital_data_2015-2019.csv")
-
-glimpse(data)
-
 
 # sentiment proportion in each council
 council_sentiment <- df_sydney %>%
@@ -45,14 +46,20 @@ council_sentiment <- df_sydney %>%
 #   coord_flip()
 # ggsave(filename = paste0("results/", filename,"_bar_chart",".pdf"), height = 12, width = 10, unit = "cm")
 # 
-# # sentiment proportion in each district
-# district_sentiment <- df_sydney %>%
-#   group_by(district, sentiment) %>%
-#   summarise(count=n()) %>%
-#   drop_na() %>%
-#   #calculate percentage of counts
-#   mutate(freq = count / sum(count)*100)
-# 
+# sentiment proportion in each district
+district_sentiment <- df_sydney %>%
+  group_by(district, sentiment) %>%
+  summarise(count=n()) %>%
+  drop_na() %>%
+  #calculate percentage of counts
+  mutate(freq = count / sum(count)*100)
+chisq.test(district_sentiment$district, district_sentiment$count)
+
+district_sentiment_postive <- district_sentiment %>% 
+  filter(sentiment == "positive") %>%
+  select(count)
+chisq.test(district_sentiment_postive$district, district_sentiment_postive$count)
+
 # # #create pie chart
 # # filename <-"Sentiment per district"
 # # ggplot(district_sentiment, aes(x="", y=freq, fill=sentiment)) + 
@@ -107,6 +114,30 @@ plot_grid(out_list[[1]], out_list[[2]], out_list[[3]], out_list[[4]], out_list[[
 ggsave("results/Sentiment by district and council.pdf",  height = 13, width = 15, unit = "cm")
 
 
+##########
+#trend
+district_sentiment_trend <- df_sydney %>%
+  mutate(month = month(publisheddate), 
+         year = year(publisheddate),
+         yearmon = as.Date(as.yearmon(paste(year, month, sep = "-")))) %>%
+  group_by(yearmon, district, sentiment) %>%
+  summarise(count=n()) %>%
+  drop_na() %>%
+  #calculate percentage of counts
+  mutate(freq = count / sum(count)*100)
+
+filename <-"Sentiment per District over time"
+ggplot(district_sentiment_trend, aes(x = yearmon, y = freq, colour = sentiment)) +
+  geom_point(alpha=.2) +
+  geom_smooth(method=loess) +
+  labs(x = "time", y = "percent", title = filename) +
+  theme(plot.title = element_text(hjust = 0.5, color = "#666666"),
+    #  text = element_text(size=7),
+      axis.text.x = element_text(angle = 45, hjust = 1)) +
+  facet_wrap(~district)
+ggsave(filename = paste0("results/", filename, ".pdf"), height = 15, width = 15, unit = "cm")
+
+
 ######################
 #emotions
 # emotion proportion in each council
@@ -114,9 +145,9 @@ council_emotions <- df_sydney %>%
   ###get rid of multiple entries in emotions field - this only keeps the first emotion mentioned and discards the rest if more are classified in a post (will produce error messages - ignore)
   # separate(emotions, c("emotions", "emotion2"), sep = ", ") %>%
   # select(-emotion2)
-  #instead separate into new rows if more than one emotion is mentioned - this "increases the number of observations"
+  #instead separate into new rows if more than one emotion is mentioned - this "increases the number of observations"; seprator sep=",\\s+" is comma and blank space / no blank space
   separate_rows(emotions, sep=",\\s+") %>%
-  group_by(council, emotions) %>%
+  group_by(district, council, emotions) %>%
   summarise(count=n()) %>%
   drop_na() %>%
   #calculate percentage of counts
@@ -142,6 +173,7 @@ filename <-"Emotions per coucil"
 ggplot(council_emotions, aes(x= reorder(council, desc(council)), y=freq, fill = emotions)) + 
   geom_bar(stat="identity") +
  # geom_text_repel(aes(label = paste0(round(freq), "%")), position = position_stack(vjust = 0.5), size = 1.5, box.padding = 0.01, direction = "x") +
+  geom_text(aes(label = paste0(round(freq), "%")), nudge_y = 19, size = 1.7) +
   labs(x = "councils", y = "percent", title = filename) +
   theme(plot.title = element_text(hjust = 0.5, color = "#666666"),
         text = element_text(size=7),
@@ -149,13 +181,13 @@ ggplot(council_emotions, aes(x= reorder(council, desc(council)), y=freq, fill = 
   scale_y_continuous(limits = (c(0,100))) +
   coord_flip() +
   facet_wrap(~emotions, ncol = 7)
-ggsave(filename = paste0("results/", filename,"_bar_chart",".pdf"), height = 15, width = 15, unit = "cm")
+ggsave(filename = paste0("results/", filename,"_bar_chart",".pdf"), height = 12, width = 15, unit = "cm")
 
 
 # emotions proportion in each district
-districts_emotions <- df_sydney %>%
+district_emotions <- council_emotions %>%
   group_by(district, emotions) %>%
-  summarise(count=n()) %>%
+  summarise(count= sum(count)) %>%
   drop_na() %>%
   #calculate percentage of counts
   mutate(freq = count / sum(count)*100)
@@ -179,18 +211,48 @@ districts_emotions <- df_sydney %>%
 filename <-"Emotions per district"
 ggplot(district_emotions, aes(x= reorder(district, desc(district)), y=freq, fill = emotions)) + 
   geom_bar(stat="identity") +
-#  geom_text(aes(label = paste0(round(freq), "%")), position = position_stack(vjust = 0.5), size = 3) +
+  geom_text(aes(label = paste0(round(freq), "%")), nudge_y = 17, size = 2) +
   labs(x = "districts", y = "percent", title = filename) +
   theme(plot.title = element_text(hjust = 0.5, color = "#666666"),
         text = element_text(size=7),
-        axis.text = element_text(size = 5)) +
+        axis.text = element_text(size = 5),
+        legend.title = element_text(size = 5),
+        legend.text = element_text(size = 5),
+        #reduce legend symbol size
+        legend.key.size = unit(0.5, "cm")) +
   scale_y_continuous(limits = (c(0,100))) +
   coord_flip() +
   facet_wrap(~emotions, ncol = 7)
-ggsave(filename = paste0("results/", filename,"_bar_chart",".pdf"), height = 5, width = 15, unit = "cm")
+ggsave(filename = paste0("results/", filename,"_bar_chart",".pdf"), height = 4, width = 15, unit = "cm")
 
 
-#number of posts per council
+##########
+#trend
+district_emotions_trend <- df_sydney %>%
+  separate_rows(emotions, sep=",\\s+") %>%
+  mutate(month = month(publisheddate), 
+         year = year(publisheddate),
+         yearmon = as.Date(as.yearmon(paste(year, month, sep = "-")))) %>%
+  group_by(yearmon, district, emotions) %>%
+  summarise(count=n()) %>%
+  drop_na() %>%
+  #calculate percentage of counts
+  mutate(freq = count / sum(count)*100)
+
+filename <-"Emotions per District over time"
+ggplot(district_emotions_trend, aes(x = yearmon, y = freq, colour = emotions)) +
+  geom_point(alpha=.2) +
+  geom_smooth(method=loess) +
+  labs(x = "time", y = "percent", title = filename) +
+  theme(plot.title = element_text(hjust = 0.5, color = "#666666"),
+        #  text = element_text(size=7),
+        axis.text.x = element_text(angle = 45, hjust = 1)) +
+  facet_wrap(~district)
+ggsave(filename = paste0("results/", filename, ".pdf"), height = 15, width = 15, unit = "cm")
+
+
+
+  #number of posts per council
 #join with population df
 no_posts_council <- df_sydney %>%
 #  filter(indvorg == "individual") %>%
@@ -203,7 +265,7 @@ no_posts_council <- df_sydney %>%
 #unique authors in councils
 authors_unique_council <- df_sydney %>%
 #  filter(indvorg == "individual") %>%
-  group_by(district, council, authorid) %>%
+  group_by(district, council, authorid, author) %>%
   summarise(count = n()) %>%
   arrange(council, desc(count))
 ########
@@ -212,7 +274,20 @@ max_unique_coucil <- authors_unique_council %>%
   group_by(council) %>% 
   summarise(count = max(count),
             #include associated authorid column
-            authorid = authorid[1])
+            author = author[1])
+write_csv(max_unique_coucil, "results/authors_with_most_posts_per_council.csv")
+
+#top authors per council - individuals
+max_unique_coucil_individuals <- df_sydney %>%
+  filter(indvorg == "individual") %>%
+  group_by(council, authorid, author) %>%
+  summarise(count = n()) %>%
+  arrange(council, desc(count)) %>%
+  group_by(council) %>% 
+  summarise(count = max(count),
+            #include associated authorid column
+            author = author[1])
+write_csv(max_unique_coucil_individuals, "results/authors_with_most_posts_per_council_individuals.csv")
 
 #number of unique voices
 authors_percent_unique_council <- authors_unique_council %>%
@@ -294,15 +369,15 @@ district.graph.authors <- function(df, na.rm = TRUE, ...){
   for (i in seq_along(district_list)) { 
   
     plot <- ggplot(filter(df, district == district_list[i]), aes(x= reorder(council, post_count))) +
-      geom_bar(aes(y = population), stat = "identity", fill = "green", alpha = 0.5) +
+      geom_bar(aes(y = population), stat = "identity", fill = "#32CD32") +
       geom_bar(aes(y = post_count), stat = "identity", fill = "#b3cde3") +
-      geom_bar(aes(y = unique_authors), stat = "identity", fill = "red", alpha = 0.7) +
+      geom_bar(aes(y = unique_authors), stat = "identity", fill = "#e50000") +
       geom_text(aes(y = unique_authors, label = paste0(percent_unique_authors, "%")), position = position_nudge(y = -10000), colour = "black", size = 2) +
-      geom_text(aes(y = post_count, label = post_count), position = position_nudge(y = 15000), colour = "black", size = 2) +
-      geom_text(aes(y = population, label = population), position = position_nudge(y = 5000), colour = "black", size = 2) +
+      geom_text(aes(y = post_count, label = post_count), position = position_nudge(y = 7000), colour = "black", size = 2) +
+      geom_text(aes(y = population, label = population), position = position_nudge(y = 20000), colour = "black", size = 2) +
       coord_flip() +
       labs(x = "councils", y = "counts", title = district_list[i]) +
-      scale_y_continuous(limits = c(-10000, 380000))
+      scale_y_continuous(limits = c(-10000, 390000))
       theme(plot.title = element_text(hjust = 0.5, color = "black", size = 10),
             axis.text = element_text(size = 11))
 
@@ -321,17 +396,17 @@ posts_per_population_district <- authors_percent_unique_council %>%
   group_by(district) %>%
   summarise(population = sum(population),
             post_count = sum(post_count)) %>%
-  mutate(round(posts_per_pop = post_count/population*100),2)
+  mutate(posts_per_pop = post_count/population*100)
   
 
 
 ######
 #gender
 df_gender <- df_sydney %>%
-  filter(gender != "unknown") %>%
-  group_by(council, district, gender) %>%
+#  filter(gender != "unknown") %>%
+  group_by(gender) %>%
   summarise(count=n()) %>%
-  mutate(count_perc = round(count/sum(count)*100)) %>%
+  mutate(count_perc = count/sum(count)*100) %>%
   drop_na() 
 
 ##plot gender by district
@@ -347,7 +422,7 @@ district.graph <- function(df, na.rm = TRUE, ...){
     
 plot <- ggplot(filter(df, district == district_list[i]), aes(x= reorder(council, desc(council)), y=count_perc, fill = gender)) + 
  geom_bar(stat="identity") +
-#  geom_text(aes(label = paste0(round(freq), "%")), position = position_stack(vjust = 0.5), size = 2) +
+  geom_text(aes(label = paste0(count_perc, "%")), position = position_stack(vjust = 0.5), size = 1.5) +
   labs(x = "councils", y = "percent", title = district_list[i]) +
   theme(plot.title = element_text(hjust = 0.5, color = "#666666"),
         text = element_text(size=7)) +

@@ -6,8 +6,8 @@ conn <- elastic::connect(host="130.155.204.198", errors = "complete")
 #ping(conn)$version$number
 
 #select dates for each year
-start <- '2014-12-01'
-end <- '2014-12-31'
+start <- '2013-10-05'
+end <- '2013-11-09'
 
 #set filtering parameters; filter for start and end dates, get twitter feeds, and exclude Media and Transport search categories
 eval(parse(text = paste0('twitter <- \'{ "query":{
@@ -114,3 +114,55 @@ str(df)
 min(df$publisheddate)  
 max(df$publisheddate)  
 
+
+# ###################
+# #manipulated datasets for the three different case studies - please ignore
+# #######
+# df_fires <-read_csv("data/bush_fires_social_capital_data_2013-10-05_2013-11-09.csv")
+# 
+# 
+# df_fires_1 <- df_fires %>%
+#   #filter post frpm Sydney and only from councils
+#   filter(topactivities == "SYDNEY",
+#          grepl("COUNCIL", activities)) %>%
+#   separate_rows(categoryruletext,sep=",\\s+") %>%
+#   rename(council = categoryruletext) %>%
+#   #select councils on the coast
+#   filter(council == "BLUE MOUNTAINS" | council == "CAMPBELLTOWN" | council == "CAMDEN" | council == "PENRITH"
+#          | council == "HAWKESBURY" | council == "WOLLONDILLY" | council == "LIVERPOOL")
+# head(df_fires_1)
+# write_csv(df_fires_1, "data/filtered_bush_fires_social_capital_data_2013-10-05_2013-11-09.csv")
+# 
+# 
+# df_storm <- read_csv("data/storm_social_capital_data_2016-06-03_2016-06-09.csv")
+# 
+# df_storm_1 <- df_storm %>%
+#   #filter post frpm Sydney and only from councils
+#   filter(topactivities == "SYDNEY",
+#          grepl("COUNCIL", activities)) %>%
+#   separate_rows(categoryruletext,sep=",\\s+") %>%
+#   rename(council = categoryruletext) %>%
+#   #select councils on the coast
+#   filter(council == "NORTHERN BEACHES" | council == "MOSMAN" | council == "WOOLLAHRA" | council == "RANDWICK" | council == "SUTHERLAND")
+# head(df_storm_1)
+# write_csv(df_storm_1, "data/filtered_storm_social_capital_data_2013-10-05_2013-11-09.csv")
+# 
+# 
+# 
+# ##########
+# #select dates during and after fire for bushfire data set
+# 
+# df_fires_2 <- df_fires %>%
+#   #filter post frpm Sydney and only from councils
+#   filter(topactivities == "SYDNEY",
+#          grepl("COUNCIL", activities),
+#          publisheddate >= "2013-10-17 00:00:00") %>%
+#   separate_rows(categoryruletext,sep=",\\s+") %>%
+#   rename(council = categoryruletext) %>%
+#   #select councils on the coast
+#   filter(council == "BLUE MOUNTAINS" | council == "CAMPBELLTOWN" | council == "CAMDEN" | council == "PENRITH"
+#          | council == "HAWKESBURY" | council == "WOLLONDILLY" | council == "LIVERPOOL")
+# head(df_fires_2)
+# write_csv(df_fires_2, "data/filtered_bush_fires_social_capital_data_2013-10-17_2013-11-09.csv")
+# 
+# 
